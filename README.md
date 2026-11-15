@@ -122,3 +122,7 @@ launchctl bootout gui/$(id -u)/com.paws.server
 - Nunca abre arquivos de credenciais (`.credentials*`, `auth.json`, tokens, `*.key`) nem o `settings.json`.
 - Mostra trechos dos seus transcripts (o último comando ou mensagem de cada sessão), só no seu navegador.
 - A seção Agendados lê arquivos internos do app Claude que não são documentados. Uma atualização do app pode quebrar essa parte.
+
+## Licença
+
+MIT. Veja o arquivo [LICENSE](LICENSE).

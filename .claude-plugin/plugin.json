@@ -5,5 +5,6 @@
   "author": { "name": "ppdrada" },
   "homepage": "https://github.com/ppdrada/paws",
   "repository": "https://github.com/ppdrada/paws",
+  "license": "MIT",
   "keywords": ["painel", "dashboard", "agentes", "skills", "agendados"]
 }
