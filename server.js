@@ -1,5 +1,5 @@
-// Paw: painel local, só leitura, dos agentes, skills e tarefas agendadas do Claude Code.
-// Uso: node server.js  →  http://localhost:4777   (porta: PORT=xxxx node server.js)
+// PAWS: painel local, só leitura, das sessões, agentes, tarefas agendadas e skills do Claude Code.
+// Uso: node server.js  →  http://localhost:4777   (porta: PORT=xxxx node server.js). macOS, Windows e Linux.
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -7,7 +7,12 @@ const os = require('node:os');
 
 const HOME = os.homedir();
 const CLAUDE = process.env.CLAUDE_CONFIG_DIR || path.join(HOME, '.claude');
-const APP = path.join(HOME, 'Library/Application Support/Claude/claude-code-sessions');
+// Pasta de dados do app Claude para desktop (de onde vêm os agendados), em cada sistema.
+const DADOS_APPS = process.platform === 'win32' ? (process.env.APPDATA || path.join(HOME, 'AppData', 'Roaming'))
+  : process.platform === 'darwin' ? path.join(HOME, 'Library', 'Application Support')
+  : (process.env.XDG_CONFIG_HOME || path.join(HOME, '.config'));
+const APP = path.join(DADOS_APPS, 'Claude', 'claude-code-sessions');
+const barras = s => String(s || '').replace(/\\/g, '/'); // caminhos do Windows usam "\"
 const PORT = Number(process.env.PORT) || 4777;
 const RECENTE_MS = 24 * 3600e3;
 const MAX_RECENTES = 25;
@@ -46,7 +51,7 @@ function frontmatter(txt) {
 }
 
 function resumoFerramenta(i = {}) {
-  return i.description || i.command || i.file_path || i.pattern || i.url || i.query || i.prompt || JSON.stringify(i);
+  return i.skill || i.description || i.command || i.file_path || i.pattern || i.url || i.query || i.prompt || JSON.stringify(i);
 }
 
 // Descreve uma linha do transcript como "o que está fazendo", ou null se não for relevante.
@@ -128,7 +133,7 @@ function nextCron(expr, from) {
 
 function pasta(cwd) {
   if (!cwd) return '';
-  if (cwd.includes('/scratch-workspaces/')) return 'pasta temporária do app';
+  if (barras(cwd).includes('/scratch-workspaces/')) return 'pasta temporária do app';
   return cwd.startsWith(HOME) ? '~' + cwd.slice(HOME.length) : cwd;
 }
 
@@ -188,7 +193,7 @@ function sessoes(app, nomesTarefas, tr, now) {
       id, cwd, pasta: pasta(cwd), acao: tail.acao || '', ultima: t?.m || extra.ultima || null,
       titulo: clip(a?.titulo || extra.nome || path.basename(cwd || '') || id, 90),
       tarefa: a?.tarefa ? (nomesTarefas.get(a.tarefa) || a.tarefa) : null,
-      interna: (cwd || '').includes('/.claude-mem/'),
+      interna: barras(cwd).includes('/.claude-mem/'),
     };
   };
   const lista = ativos.map(s => linha(s.sessionId, {
@@ -237,7 +242,7 @@ function agentes(listaSessoes, tr, now) {
       const a = defs.get(meta.agentType);
       a.ultimoUso = Math.max(a.ultimoUso || 0, m);
       // shortcut: sem atividade por 2 min conta como parado, mesmo sem "finished" no meta.
-      if (s.ativo && !meta.finished && now - m < 120e3) a.rodando.push({ tarefa: clip(meta.description, 120), sessao: s.titulo });
+      if (s.ativo && !meta.finished && now - m < 120e3) a.rodando.push({ tarefa: clip(meta.description, 120), sessao: s.titulo, sessaoId: s.id });
     }
   }
   const ordem = o => (o === 'meu' ? 0 : o === 'embutido' ? 2 : 1);
@@ -305,12 +310,13 @@ function estado() {
 }
 
 function servir(req, res) {
-  // Bloqueia DNS rebinding: só aceita o painel aberto por localhost/127.0.0.1.
-  if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) return res.writeHead(403).end();
+  // Bloqueia DNS rebinding: só aceita o painel aberto por localhost, paws.localhost ou 127.0.0.1.
+  if (!/^(localhost|paws\.localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) return res.writeHead(403).end();
   if (req.method !== 'GET') return res.writeHead(405).end();
-  if (req.url === '/api') {
+  const caminho = req.url.split('?')[0]; // ignora parâmetros como ?tema=escuro
+  if (caminho === '/api') {
     try {
-      const body = JSON.stringify(estado());
+      const body = JSON.stringify(process.env.PAWS_DEMO ? require('./demo.js')() : estado()); // PAWS_DEMO=1: dados de exemplo
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
       return res.end(body);
     } catch (e) {
@@ -318,7 +324,7 @@ function servir(req, res) {
       return res.end('erro: ' + e.message);
     }
   }
-  if (req.url === '/') {
+  if (caminho === '/') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     return res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
   }
@@ -326,7 +332,7 @@ function servir(req, res) {
 }
 
 if (require.main === module) {
-  http.createServer(servir).listen(PORT, '127.0.0.1', () => console.log(`PAWS em http://localhost:${PORT}`));
+  http.createServer(servir).listen(PORT, '127.0.0.1', () => console.log(`PAWS em http://paws.localhost:${PORT}/#office`));
 }
 
 module.exports = { frontmatter, parseTail, nextCron, descrever, estado };

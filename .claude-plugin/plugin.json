@@ -1,0 +1,9 @@
+{
+  "name": "paws",
+  "version": "1.0.0",
+  "description": "PAWS (Panel - Agentes - Workflows - Skills): painel local no navegador com as sessões, agentes, tarefas agendadas e skills do Claude Code, com um escritório em pixel art. Digite /paws para abrir.",
+  "author": { "name": "ppdrada" },
+  "homepage": "https://github.com/ppdrada/paws",
+  "repository": "https://github.com/ppdrada/paws",
+  "keywords": ["painel", "dashboard", "agentes", "skills", "agendados"]
+}

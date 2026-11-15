@@ -1,0 +1,12 @@
+{
+  "description": "Liga o painel PAWS em segundo plano quando o Claude Code abre (se ainda não estiver rodando).",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/iniciar.js\"", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

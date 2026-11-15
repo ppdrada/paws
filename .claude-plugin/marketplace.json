@@ -1,0 +1,12 @@
+{
+  "name": "paws",
+  "owner": { "name": "ppdrada" },
+  "description": "PAWS: painel local das sessões, agentes, agendados e skills do Claude Code.",
+  "plugins": [
+    {
+      "name": "paws",
+      "source": "./",
+      "description": "Painel local no navegador com as sessões, agentes, tarefas agendadas e skills do Claude Code. Digite /paws para abrir."
+    }
+  ]
+}
